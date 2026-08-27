@@ -1,0 +1,178 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,500&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #12211f;
+  --color-paper: #faf8f4;
+  --color-paper-dim: #f2f0e9;
+  --color-primary: #0f5c52;
+  --color-primary-dark: #0a3e38;
+  --color-primary-light: #e3f0ec;
+  --color-accent: #dc7c2a;
+  --color-accent-dark: #b8641c;
+  --color-accent-light: #fbead7;
+  --color-line: #e1e8e4;
+  --color-muted: #5b6e6a;
+  --color-success: #2f8f5b;
+  --color-success-light: #e6f4ec;
+  --color-warning: #c8891f;
+  --color-warning-light: #fbf0dc;
+  --color-danger: #c4433b;
+  --color-danger-light: #fbe9e7;
+
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: white;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-paper-dim);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #c7d3ce;
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary);
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 font-semibold text-white shadow-[0_10px_25px_-8px_rgba(15,92,82,0.55)] transition-all duration-300 hover:bg-primary-dark hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:hover:translate-y-0;
+  }
+
+  .btn-accent {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3.5 font-semibold text-white shadow-[0_10px_25px_-8px_rgba(220,124,42,0.6)] transition-all duration-300 hover:bg-accent-dark hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:hover:translate-y-0;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border-2 border-white/70 px-6 py-3.5 font-semibold text-white transition-all duration-300 hover:bg-white hover:text-primary hover:-translate-y-0.5;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-white px-5 py-3 font-semibold text-ink transition-all duration-300 hover:border-primary hover:text-primary hover:-translate-y-0.5;
+  }
+
+  .card {
+    @apply rounded-2xl border border-line/70 bg-white shadow-[0_1px_2px_rgba(18,33,31,0.04),0_8px_24px_-12px_rgba(18,33,31,0.12)];
+  }
+
+  .input-field {
+    @apply w-full rounded-xl border border-line bg-white px-4 py-3.5 text-ink placeholder:text-muted/70 transition-all duration-200 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary-light;
+  }
+
+  .select-field {
+    @apply w-full rounded-xl border border-line bg-white px-4 py-3.5 text-ink transition-all duration-200 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary-light;
+  }
+
+  .field-error {
+    @apply mt-1.5 text-sm font-medium text-danger;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-accent-dark;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide;
+  }
+
+  .badge-pending { @apply bg-warning-light text-warning; }
+  .badge-confirmed { @apply bg-success-light text-success; }
+  .badge-completed { @apply bg-primary-light text-primary; }
+  .badge-cancelled { @apply bg-danger-light text-danger; }
+
+  .icon-action {
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-200 hover:-translate-y-0.5;
+  }
+
+  .table-shell {
+    @apply overflow-hidden rounded-2xl border border-line/70 bg-white shadow-[0_1px_2px_rgba(18,33,31,0.04),0_8px_24px_-12px_rgba(18,33,31,0.12)];
+  }
+
+  .table-shell table {
+    @apply w-full border-collapse;
+  }
+
+  .table-shell thead {
+    @apply bg-primary-dark text-white;
+  }
+
+  .table-shell th {
+    @apply px-5 py-4 text-left text-xs font-bold uppercase tracking-wider;
+  }
+
+  .table-shell td {
+    @apply px-5 py-4 text-sm text-ink;
+  }
+
+  .table-shell tbody tr {
+    @apply border-b border-line/60 transition-colors duration-150 last:border-b-0 hover:bg-primary-light/40;
+  }
+}
+
+@layer utilities {
+  .reveal-up {
+    animation: revealUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .float-slow {
+    animation: floatY 6s ease-in-out infinite;
+  }
+
+  .pulse-dash {
+    stroke-dasharray: 6 10;
+    animation: pulseDash 2.4s linear infinite;
+  }
+}
+
+@keyframes revealUp {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+@keyframes pulseDash {
+  to { stroke-dashoffset: -32; }
+}
