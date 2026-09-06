@@ -13,13 +13,16 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ChatController;
 
 
-/*
-|--------------------------------------------------------------------------
+/*-----------------------------------------------------------------------
 | Public Routes (no login required)
 |--------------------------------------------------------------------------
 */
 
+
 // Authentication — register ALWAYS creates role = 'user'
+
+Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
