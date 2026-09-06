@@ -19,7 +19,7 @@ class AuthController extends Controller
      * registration is hard-coded to role = 'user'. Admin and Doctor
      * accounts can only be created by an existing admin.
      */
-    public function register(Request $request)
+    public function registers(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
