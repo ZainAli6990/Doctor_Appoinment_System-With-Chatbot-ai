@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\AppointmentConfirmationMail;
 use App\Models\Appointment;
 use App\Models\Doctor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 
 class AppointmentController extends Controller
@@ -57,13 +59,9 @@ class AppointmentController extends Controller
     /**
      * Book a new appointment.
      *
-     * - role = user   : books for themselves. user_id always comes from
-     *                   the authenticated session — never from the request
-     *                   body — so a patient can never book "as" someone else.
-     * - role = admin  : can record a walk-in (patient_id) or book on behalf
-     *                   of a registered patient (user_id), preserving the
-     *                   existing admin "Book Appointment" workflow.
-     * - role = doctor : not permitted (403).
+     * - role = user   : books for themselves.
+     * - role = admin  : can record a walk-in or book for a registered patient.
+     * - role = doctor : not permitted.
      */
     public function store(Request $request)
     {
@@ -93,7 +91,10 @@ class AppointmentController extends Controller
         if ($actor->role === 'admin') {
             $rules['patient_id'] = 'nullable|exists:patients,id';
             $rules['user_id'] = 'nullable|exists:users,id';
-            $rules['status'] = ['nullable', Rule::in(['Pending', 'Confirmed', 'Cancelled', 'Completed'])];
+            $rules['status'] = [
+                'nullable',
+                Rule::in(['Pending', 'Confirmed', 'Cancelled', 'Completed'])
+            ];
         }
 
         $validated = $request->validate($rules);
@@ -115,12 +116,17 @@ class AppointmentController extends Controller
             if (empty($validated['patient_id']) && empty($validated['user_id'])) {
                 return response()->json([
                     'success' => false,
-                    'errors' => ['patient_id' => ['Select an existing patient or a registered user.']],
+                    'errors' => [
+                        'patient_id' => [
+                            'Select an existing patient or a registered user.'
+                        ]
+                    ],
                 ], 422);
             }
         }
 
-        // Prevent an obvious duplicate: same doctor, date & time, not already cancelled.
+        // Prevent an obvious duplicate:
+        // same doctor, date & time, not already cancelled.
         $clash = Appointment::where('doctor_id', $validated['doctor_id'])
             ->where('appointment_date', $validated['appointment_date'])
             ->where('appointment_time', $validated['appointment_time'])
@@ -134,10 +140,11 @@ class AppointmentController extends Controller
             ], 422);
         }
 
+        // Patient bookings start as Pending.
         $validated['status'] = $validated['status'] ?? 'Pending';
 
         $appointment = Appointment::create($validated);
-
+         
         return response()->json([
             'success' => true,
             'message' => 'Appointment created successfully.',
@@ -147,9 +154,10 @@ class AppointmentController extends Controller
 
     /**
      * View a single appointment.
+     *
      * - admin  : can view any appointment.
-     * - user   : only their own (403 otherwise).
-     * - doctor : only their own (403 otherwise).
+     * - user   : only their own.
+     * - doctor : only their own.
      */
     public function show(Request $request, Appointment $appointment)
     {
@@ -158,7 +166,8 @@ class AppointmentController extends Controller
         $owns = match ($actor->role) {
             'admin' => true,
             'user' => (int) $appointment->user_id === (int) $actor->id,
-            'doctor' => $actor->doctorProfile && (int) $appointment->doctor_id === (int) $actor->doctorProfile->id,
+            'doctor' => $actor->doctorProfile
+                && (int) $appointment->doctor_id === (int) $actor->doctorProfile->id,
             default => false,
         };
 
@@ -171,16 +180,27 @@ class AppointmentController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $appointment->load(['doctor.specialization', 'patient', 'user'])
+            'data' => $appointment->load([
+                'doctor.specialization',
+                'patient',
+                'user'
+            ])
         ], 200);
     }
 
     public function create() {}
+
     public function edit(Appointment $appointment) {}
 
     /**
      * Admin-only general update (status / reschedule / notes).
      * (Route is behind ['auth:sanctum', 'admin'].)
+     *
+     * Confirmation email is sent only when:
+     *
+     * Pending -> Confirmed
+     *
+     * and the appointment belongs to a registered user.
      */
     public function update(Request $request, Appointment $appointment)
     {
@@ -190,16 +210,61 @@ class AppointmentController extends Controller
             'user_id' => 'sometimes|nullable|exists:users,id',
             'appointment_date' => 'sometimes|required|date',
             'appointment_time' => 'sometimes|required',
-            'status' => ['sometimes', Rule::in(['Pending', 'Confirmed', 'Cancelled', 'Completed'])],
+            'status' => [
+                'sometimes',
+                Rule::in([
+                    'Pending',
+                    'Confirmed',
+                    'Cancelled',
+                    'Completed'
+                ])
+            ],
             'notes' => 'nullable|string',
         ]);
 
+        // Save the old status before updating.
+        $oldStatus = $appointment->status;
+
+        // Update appointment.
         $appointment->update($validated);
+
+        /*
+         * Send confirmation email ONLY when:
+         *
+         * Old status = Pending
+         * New status = Confirmed
+         *
+         * This prevents duplicate confirmation emails.
+         */
+        if (
+            $oldStatus === 'Pending' &&
+            $appointment->status === 'Confirmed' &&
+            $appointment->user_id
+        ) {
+            // Load all required relationships for the email.
+            $appointment->load([
+                'user',
+                'doctor.specialization'
+            ]);
+
+            // Make sure the registered user exists and has an email.
+            if ($appointment->user && $appointment->user->email) {
+
+                Mail::to($appointment->user->email)
+                    ->send(
+                        new AppointmentConfirmationMail($appointment)
+                    );
+            }
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Appointment updated successfully.',
-            'data' => $appointment->load(['doctor', 'patient', 'user'])
+            'data' => $appointment->load([
+                'doctor',
+                'patient',
+                'user'
+            ])
         ], 200);
     }
 
@@ -223,7 +288,9 @@ class AppointmentController extends Controller
             ], 422);
         }
 
-        $appointment->update(['status' => 'Cancelled']);
+        $appointment->update([
+            'status' => 'Cancelled'
+        ]);
 
         return response()->json([
             'success' => true,
